@@ -84,15 +84,18 @@ $(function() {
     }
   });
   
+  /* TODO
   var g = new Grid(null, {
     size: $('#game').data('gridSize')
   });
   var v = new GridView({model: g});
-  $('#game').append(v.render().el);
-  
-  var socket = io.connect('http://localhost');
-  socket.on('news', function (data) {
-    console.log(data);
-    socket.emit('my other event', { my: 'data' });
+  $('#game').empty().append(v.render().el);
+  */
+  var socket = io.connect();
+  $('#enterbutton').click(function() {
+    socket.emit('chooseusername', { name: $('#username').val() });
+  });
+  socket.on('wrongusername', function(data) {
+    alert(data.reason);
   });
 })

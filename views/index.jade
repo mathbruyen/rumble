@@ -2,11 +2,13 @@ doctype 5
 html(lang="en")
   head
     title Rumble
-    <meta charset="utf-8">
+    meta(charset='utf-8')
     script(type='text/javascript', src='/socket.io/socket.io.js')
     script(type='text/javascript', src='http://code.jquery.com/jquery-1.7.2.min.js')
     script(type='text/javascript', src='http://documentcloud.github.com/underscore/underscore-min.js')
     script(type='text/javascript', src='http://documentcloud.github.com/backbone/backbone-min.js')
     script(type='text/javascript', src='/rumble.js')
   body
-    div#game(data-grid-size='#{size}')
+    div#game(data-grid-size='#{config.grid.size}')
+      input#username(placeholder='Enter a username...', maxlength='#{config.username.maxlength}', required)
+      button#enterbutton Enter
