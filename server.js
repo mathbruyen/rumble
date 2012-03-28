@@ -35,3 +35,5 @@ io.sockets.on('connection', function (socket) {
 // when switching to a new grid, 3D cube effect
 
 // each round should be identified by a unique ID to prevent conflicts/lag
+
+// forbid username N/A
