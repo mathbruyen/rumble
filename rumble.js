@@ -42,7 +42,7 @@ $(function() {
       if (this.model.has('reservedBy')) {
         this.$el.text(this.model.get('reservedBy'));
       } else {
-        this.$el.text('N/A');
+        this.$el.text(this.model.get('value'));
       }
       var heat = Math.floor(this.model.get('heat') * 255 / config.heat.max);
       this.$el.css('background-color', 'rgb(' + heat + ',' + (255 - heat) + ', 0)');
@@ -53,10 +53,10 @@ $(function() {
   var Grid = Backbone.Collection.extend({
     model: Cell,
     initialize: function(models, options) {
-      for (var i = 0; i < options.size * options.size; i++) {
-        this.add(new Cell());
+      for (var i = 0; i < options.size; i++) {
+        this.add(new Cell({ value: i + 1 }));
       }
-      this.byRow = _.split(this, options.size);
+      this.byRow = _.split(this, Math.ceil(Math.sqrt(options.size)));
     },
     getCell: function(row, col) {
       return this.at((row * this.options.size) + col);
@@ -84,18 +84,17 @@ $(function() {
     }
   });
   
-  /* TODO
-  var g = new Grid(null, {
-    size: $('#game').data('gridSize')
-  });
-  var v = new GridView({model: g});
-  $('#game').empty().append(v.render().el);
-  */
   var socket = io.connect();
   $('#enterbutton').click(function() {
     socket.emit('chooseusername', { name: $('#username').val() });
   });
   socket.on('wrongusername', function(data) {
     alert(data.reason);
+  });
+  socket.on('entergame', function(data) {
+    // TODO data.players
+    var g = new Grid(null, { size: data.gridsize });
+    var v = new GridView({model: g});
+    $('#game').empty().append(v.render().el);
   });
 })

@@ -1,16 +1,56 @@
 var app = require('express').createServer()
 var io = require('socket.io').listen(app);
 
+/**
+ * ---CONFIGURATION
+ */
 var config = {
   grid: {
-    size: 10 //TODO should be 100
+    size: 100
   },
   username: {
     maxlength: 20
+  },
+  express: {
+    port: 8525
   }
 }
 
-app.listen(8525);
+/**
+ * ---EXTENSIONS
+ */
+Array.prototype.contains = function(array, value) {
+  var s = array.length;
+  for (var i = 0; i < s; i++) {
+    if (array[i] === value) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * ---PLAYERMANAGEMENT
+ */
+var players = [];
+var registerPlayer = function(name) {
+  if ((!name) || (name == 'N/A') || (name.length > 20)) {
+    return 'Username is incorrect';
+  } else if (players.contains(name)) {
+    return 'Username already in use';
+  } else {
+    players.push(name);
+    return null;
+  }
+}
+var listPlayers = function() {
+  return players;
+}
+
+/**
+ * ---EXPRESS
+ */
+app.listen(config.express.port);
 app.set('view engine', 'jade');
 app.set('view options', { layout: false });
 
@@ -23,21 +63,22 @@ app.get('/rumble.js', function(req, res) {
   res.sendfile(__dirname + '/rumble.js');
 });
 
-var players = {};
+/**
+ * ---WEBSOCKETS
+ */
 io.sockets.on('connection', function(socket) {
   var name = null;
   socket.on('chooseusername', function(data) {
     if (name) {
       return;
     }
-    if ((!data['name']) || (data['name'] == 'N/A') || (data['name'].length > 20)) {
-      socket.emit('wrongusername', { reason: 'Username is incorrect' });
-    } else if (players[data['name']]) {
-      socket.emit('wrongusername', { reason: 'Username already in use' });
+    error = registerPlayer(data.name);
+    if (error) {
+      socket.emit('wrongusername', { reason: error });
     } else {
-      name = data['name'];
-      players[name] = {};
-      //TODO send validation
+      name = data.name;
+      socket.emit('entergame', { players: listPlayers(), gridsize: config.grid.size });
+      
       socket.on('disconnect', function() {
         players[name] = null;
       });
@@ -45,6 +86,9 @@ io.sockets.on('connection', function(socket) {
   });
 });
 
+/**
+ * ---TODOS
+ */
 // badges = plugins (listen to events) => sound, visual effect, cursor, ...
 // * select a cell that has just be chosen by another
 // * do not play for n rounds
@@ -60,7 +104,7 @@ io.sockets.on('connection', function(socket) {
 
 // each round should be identified by a unique ID to prevent conflicts/lag
 
-// forbid username N/A
 // use a datalist to suggest values to enter in the input
 // add spinners
 // adapt grid size to number of players
+// list players and their score
