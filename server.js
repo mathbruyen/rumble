@@ -21,6 +21,17 @@ var workflow = new require('./workflow')();
 workflow.players = {};
 workflow.grid = new Array(config.grid.size);
 
+var playersForUI = function() {
+  var players = new Array();
+  for (var name in workflow.players) {
+    players.push({
+      name: name,
+      score: workflow.players[name].score
+    });
+  }
+  return players;
+}
+
 workflow.setNode('init', 'chooseusername', function(data) {
   if ((!data.name) || (data.name == 'N/A') || (data.name.length > 20)) {
     this.socket.emit('wrongusername', { reason: 'Username is incorrect' });
@@ -33,7 +44,7 @@ workflow.setNode('init', 'chooseusername', function(data) {
     this.player = this.workflow.players[data.name];
     this.username = data.name;
     this.socket.emit('entergame', {
-      players: [],
+      players: playersForUI(),
       gridsize: config.grid.size
     });
     return 'choosenumber';

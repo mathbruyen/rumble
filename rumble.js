@@ -81,6 +81,42 @@ $(function() {
     }
   });
   
+  var Player = Backbone.Model.extend({
+  });
+  
+  var PlayerMiniView = Backbone.View.extend({
+    tagName: 'li',
+    initialize: function() {
+      this.model.bind('change', this.render, this);
+    },
+    render: function() {
+      this.$el.text(this.model.get('name') + ': ' + this.model.get('score'));
+      return this;
+    }
+  });
+  
+  var PlayerList = Backbone.Collection.extend({
+    model: Player,
+    comparator: function(player) {
+      return (- player.get('score'));
+    }
+  });
+  
+  var PlayerListView = Backbone.View.extend({
+    tagName: 'ul',
+    initialize: function() {
+      this.model.bind('add', this.render, this);
+      this.model.bind('remove', this.render, this);
+      this.model.bind('reset', this.render, this);
+    },
+    render: function() {
+      this.model.each(function(player) {
+        this.$el.append(new PlayerMiniView({ model: player }).render().el);
+      }, this);
+      return this;
+    }
+  });
+  
   var App = Backbone.Model.extend({
     initialize: function() {
       this.set('cells', new Grid());
@@ -98,6 +134,7 @@ $(function() {
     render: function() {
       this.$el.empty();
       this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
+      this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
       return this;
     }
   });
@@ -110,8 +147,9 @@ $(function() {
     alert(data.reason);
   });
   socket.on('entergame', function(data) {
-    // TODO data.players
-    var a = new App();
+    var a = new App({
+      players: new PlayerList(data.players)
+    });
     a.setSize(data.gridsize);
     var v = new AppView({ model: a, el: $('#game') });
     v.render();
