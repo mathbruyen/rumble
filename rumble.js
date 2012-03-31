@@ -41,7 +41,7 @@ $(function() {
     },
     render: function() {
       if (this.model.has('reservedBy')) {
-        this.$el.text(this.model.get('reservedBy'));
+        this.$el.text(this.model.get('reservedBy').get('name'));
       } else {
         //TODO use built-in id instead of value
         this.$el.text(this.model.get('value'));
