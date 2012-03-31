@@ -19,6 +19,7 @@ $(function() {
     }
   });
   
+  // heat, reservedBy, value
   var Cell = Backbone.Model.extend({
     initialize: function() {
       this.set('heat', config.heat.max / 2);
@@ -81,6 +82,7 @@ $(function() {
     }
   });
   
+  // name, score
   var Player = Backbone.Model.extend({
   });
   
@@ -117,6 +119,7 @@ $(function() {
     }
   });
   
+  // cells, players
   var App = Backbone.Model.extend({
     initialize: function() {
       this.set('cells', new Grid());
