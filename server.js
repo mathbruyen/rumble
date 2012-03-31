@@ -1,6 +1,3 @@
-var app = require('express').createServer()
-var io = require('socket.io').listen(app);
-
 /**
  * ---CONFIGURATION
  */
@@ -17,39 +14,45 @@ var config = {
 }
 
 /**
- * ---EXTENSIONS
+ * ---WORKFLOW
  */
-Array.prototype.contains = function(array, value) {
-  var s = array.length;
-  for (var i = 0; i < s; i++) {
-    if (array[i] === value) {
-      return true;
-    }
-  }
-  return false;
-}
+var workflow = new require('./workflow')();
 
-/**
- * ---PLAYERMANAGEMENT
- */
-var players = [];
-var registerPlayer = function(name) {
-  if ((!name) || (name == 'N/A') || (name.length > 20)) {
-    return 'Username is incorrect';
-  } else if (players.contains(name)) {
-    return 'Username already in use';
+workflow.players = {};
+workflow.grid = new Array(config.grid.size);
+
+workflow.setNode('init', 'chooseusername', function(data) {
+  if ((!data.name) || (data.name == 'N/A') || (data.name.length > 20)) {
+    this.socket.emit('wrongusername', { reason: 'Username is incorrect' });
+  } else if (workflow.players[data.name]) {
+    this.socket.emit('wrongusername', { reason: 'Username already in use' });
   } else {
-    players.push(name);
-    return null;
+    this.workflow.players[data.name] = {
+      score: 0
+    };
+    this.player = this.workflow.players[data.name];
+    this.username = data.name;
+    this.socket.emit('entergame', {
+      players: [],
+      gridsize: config.grid.size
+    });
+    return 'choosenumber';
   }
-}
-var listPlayers = function() {
-  return players;
-}
+});
+workflow.setNode('*', 'disconnect', function(data, local, global) {
+  if (this.username) {
+    delete this.workflow.players[this.username];
+  }
+  delete this.socket;
+  //TODO clean grid entry
+  //TODO notify players
+});
 
 /**
  * ---EXPRESS
  */
+var app = require('express').createServer()
+
 app.listen(config.express.port);
 app.set('view engine', 'jade');
 app.set('view options', { layout: false });
@@ -66,24 +69,12 @@ app.get('/rumble.js', function(req, res) {
 /**
  * ---WEBSOCKETS
  */
+var io = require('socket.io').listen(app);
+
 io.sockets.on('connection', function(socket) {
-  var name = null;
-  socket.on('chooseusername', function(data) {
-    if (name) {
-      return;
-    }
-    error = registerPlayer(data.name);
-    if (error) {
-      socket.emit('wrongusername', { reason: error });
-    } else {
-      name = data.name;
-      socket.emit('entergame', { players: listPlayers(), gridsize: config.grid.size });
-      
-      socket.on('disconnect', function() {
-        players[name] = null;
-      });
-    }
-  });
+  var f = workflow.instance('init');
+  f.socket = socket;
+  f.listen(socket);
 });
 
 /**
@@ -108,3 +99,7 @@ io.sockets.on('connection', function(socket) {
 // add spinners
 // adapt grid size to number of players
 // list players and their score
+// http://server/#username to prefil username and enter the game directly (+link to change it)
+
+// add readme
+// compress messages by giving an id to players and only sending it

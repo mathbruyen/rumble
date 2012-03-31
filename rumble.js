@@ -42,6 +42,7 @@ $(function() {
       if (this.model.has('reservedBy')) {
         this.$el.text(this.model.get('reservedBy'));
       } else {
+        //TODO use built-in id instead of value
         this.$el.text(this.model.get('value'));
       }
       var heat = Math.floor(this.model.get('heat') * 255 / config.heat.max);
@@ -52,18 +53,6 @@ $(function() {
   
   var Grid = Backbone.Collection.extend({
     model: Cell,
-    initialize: function(models, options) {
-      for (var i = 0; i < options.size; i++) {
-        this.add(new Cell({ value: i + 1 }));
-      }
-      this.byRow = _.split(this, Math.ceil(Math.sqrt(options.size)));
-    },
-    getCell: function(row, col) {
-      return this.at((row * this.options.size) + col);
-    },
-    getRows: function() {
-      return this.byRow;
-    },
     clean: function() {
       this.each(function(cell) { cell.clean(); });
     }
@@ -71,15 +60,44 @@ $(function() {
   
   var GridView = Backbone.View.extend({
     tagName: 'table',
+    initialize: function() {
+      this.model.bind('add', this.render, this);
+      this.model.bind('remove', this.render, this);
+      this.model.bind('reset', this.render, this);
+    },
     render: function() {
       this.$el.empty();
-      this.model.getRows().each(function(row) {
-        var r = $('<tr>');
-        row.each(function(cell) {
-          r.append(new CellView({ model: cell }).render().el);
-        });
-        this.$el.append(r);
-      }, this);
+      var c = Math.ceil(Math.sqrt(this.model.size()));
+      if (c > 0) {
+        _.split(this.model, c).each(function(row) {
+          var r = $('<tr>');
+          row.each(function(cell) {
+            r.append(new CellView({ model: cell }).render().el);
+          });
+          this.$el.append(r);
+        }, this);
+      }
+      return this;
+    }
+  });
+  
+  var App = Backbone.Model.extend({
+    initialize: function() {
+      this.set('cells', new Grid());
+    },
+    setSize: function(size) {
+      var c = this.get('cells');
+      c.reset();
+      for (var i = 0; i < size; i++) {
+        c.add(new Cell({ value: i + 1 }));
+      }
+    }
+  });
+  
+  var AppView = Backbone.View.extend({
+    render: function() {
+      this.$el.empty();
+      this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
       return this;
     }
   });
@@ -93,8 +111,9 @@ $(function() {
   });
   socket.on('entergame', function(data) {
     // TODO data.players
-    var g = new Grid(null, { size: data.gridsize });
-    var v = new GridView({model: g});
-    $('#game').empty().append(v.render().el);
+    var a = new App();
+    a.setSize(data.gridsize);
+    var v = new AppView({ model: a, el: $('#game') });
+    v.render();
   });
 })
