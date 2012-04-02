@@ -7,7 +7,9 @@ var io = require('socket.io').listen(app);
 
 var config = {
   grid: {
-    size: 100
+    size: 100,
+    timeToChoose: 10000,
+    timeBeforeResult: 2000
   },
   username: {
     maxlength: 20
@@ -40,16 +42,20 @@ app.get('/rumble.js', function(req, res) {
 
 var serverState = {
   players: {},
-  grid: new Array(config.grid.size)
+  grid: new Array(config.grid.size),
+  state: 'init'
 }
 
+var playerForUI = function(player) {
+  return {
+    name: player.username,
+    score: player.score
+  };
+}
 var playersForUI = function() {
   var players = new Array();
   for (var name in serverState.players) {
-    players.push({
-      name: name,
-      score: serverState.players[name].score
-    });
+    players.push(playerForUI(serverState.players[name]));
   }
   return players;
 }
@@ -57,6 +63,11 @@ var playersForUI = function() {
 /**
  * ---WEBSOCKETS
  */
+
+io.enable('browser client minification');
+io.enable('browser client etag');
+io.enable('browser client gzip');
+io.set('log level', 1);
 
 var bindEvent = function(socket, event, state, callback) {
   var setState = function(newState) {
@@ -78,7 +89,6 @@ var bindEvent = function(socket, event, state, callback) {
 io.sockets.on('connection', function(socket) {
   socket.state = 'init';
   bindEvent(socket, 'disconnect', '*', function(data) {
-    console.log('disconnect');
     if (this.player) {
       delete serverState.players[this.player.username];
     }
@@ -98,10 +108,57 @@ io.sockets.on('connection', function(socket) {
         players: playersForUI(),
         gridsize: config.grid.size
       });
-      return 'choosenumber';
+      socket.broadcast.emit('newplayer', playerForUI(this.player));
+      return 'ingame';
+    }
+  });
+  bindEvent(socket, 'choosenumber', 'ingame', function(data) {
+    if (serverState.state == 'choosenumber') {
+      if ((data.chosen < 0) || (data.chosen >= config.grid.size)) {
+        //TODO wrong number
+      } else if (serverState.grid[data.chosen]) {
+        //TODO already chosen
+      } else {
+        serverState.grid[data.chosen] = socket.player.username;
+        io.sockets.emit('playerchosenumber', { player: socket.player.username, value: data.chosen });
+      }
+    } else {
+      //TODO too late
     }
   });
 });
+
+/**
+ * ---SERVERSIDE
+ */
+
+var enterChooseNumber = function() {
+  serverState.state = 'choosenumber';
+  setTimeout(function() {
+    enterClosedBeforeResult();
+    io.sockets.emit('closedbeforeresult');
+  }, config.grid.timeToChoose);
+}
+var enterClosedBeforeResult = function() {
+  serverState.state = 'closedbeforeresult';
+  setTimeout(function() {
+    announceResult();
+    enterChooseNumber();
+  }, config.grid.timeBeforeResult);
+}
+var announceResult = function() {
+  var result = Math.floor(Math.random() * config.grid.size);
+  var user = serverState.grid[result];
+  if (user) {
+    serverState.players[user].score++;
+  }
+  for (var i = 0; i < config.grid.size; i++) {
+    serverState.grid[i] = null;
+  }
+  io.sockets.emit('terminateround', { winner: result });
+}
+
+enterChooseNumber();
 
 /**
  * ---TODOS

@@ -43,8 +43,7 @@ $(function() {
       if (this.model.has('reservedBy')) {
         this.$el.text(this.model.get('reservedBy').get('name'));
       } else {
-        //TODO use built-in id instead of value
-        this.$el.text(this.model.get('value'));
+        this.$el.text(this.model.id + 1);
       }
       var heat = Math.floor(this.model.get('heat') * 255 / config.heat.max);
       this.$el.css('background-color', 'rgb(' + heat + ',' + (255 - heat) + ', 0)');
@@ -84,6 +83,9 @@ $(function() {
   
   // name, score
   var Player = Backbone.Model.extend({
+    winRound: function() {
+      this.set('score', this.get('score') + 1);
+    }
   });
   
   var PlayerMiniView = Backbone.View.extend({
@@ -101,6 +103,10 @@ $(function() {
     model: Player,
     comparator: function(player) {
       return (- player.get('score'));
+    },
+    getByName: function(name) {
+      return this.find(function(player) { return (player.get('name') == name); });
+      //TODO fetch from server if missing
     }
   });
   
@@ -112,6 +118,7 @@ $(function() {
       this.model.bind('reset', this.render, this);
     },
     render: function() {
+      this.$el.empty();
       this.model.each(function(player) {
         this.$el.append(new PlayerMiniView({ model: player }).render().el);
       }, this);
@@ -128,14 +135,40 @@ $(function() {
       var c = this.get('cells');
       c.reset();
       for (var i = 0; i < size; i++) {
-        c.add(new Cell({ value: i + 1 }));
+        c.add(new Cell({ id: i }));
       }
+    },
+    listen: function(socket) {
+      this.socket = socket;
+      this.socket.on('playerchosenumber', _.bind(function(data) {
+        this.get('cells').get(data.value).reserve(this.get('players').getByName(data.player));
+      }, this));
+      this.socket.on('newplayer', _.bind(function(player) {
+        this.get('players').add(player);
+      }, this));
+      this.socket.on('terminateround', _.bind(function(data) {
+        var cells = this.get('cells');
+        var winner = cells.get(data.winner);
+        if (winner.has('reservedBy')) {
+          winner.get('reservedBy').winRound();
+        }
+        this.get('cells').clean();
+      }, this));
+    },
+    select: function(value) {
+      this.socket.emit('choosenumber', { chosen: value });
     }
   });
   
   var AppView = Backbone.View.extend({
     render: function() {
       this.$el.empty();
+      var input = $('<input />').attr({
+        placeholder: 'Enter your choice...',
+        required: true
+      });
+      this.$el.append(input);
+      this.$el.append($('<button />').text('Select').on('click', _.bind(function() { this.select(input.val() - 1); }, this.model)));
       this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
       this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
       return this;
@@ -154,7 +187,7 @@ $(function() {
       players: new PlayerList(data.players)
     });
     a.setSize(data.gridsize);
-    var v = new AppView({ model: a, el: $('#game') });
-    v.render();
+    a.listen(socket);
+    new AppView({ model: a, el: $('#game') }).render();
   });
 })
