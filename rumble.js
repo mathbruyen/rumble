@@ -2,7 +2,7 @@ $(function() {
   var config = {
     heat: {
       max: 10,
-      reduceFactor: 0.8
+      reduceFactor: 0.91
     }
   };
   
@@ -19,7 +19,7 @@ $(function() {
     }
   });
   
-  // heat, reservedBy, value
+  // id(value[0..size[), heat, reservedBy
   var Cell = Backbone.Model.extend({
     initialize: function() {
       this.set('heat', config.heat.max / 2);
@@ -41,7 +41,7 @@ $(function() {
     },
     render: function() {
       if (this.model.has('reservedBy')) {
-        this.$el.text(this.model.get('reservedBy').get('name'));
+        this.$el.text(this.model.get('reservedBy').id);
       } else {
         this.$el.text(this.model.id + 1);
       }
@@ -81,8 +81,9 @@ $(function() {
     }
   });
   
-  // name, score
+  // id(name), score
   var Player = Backbone.Model.extend({
+    urlRoot: '/players',
     winRound: function() {
       this.set('score', this.get('score') + 1);
     }
@@ -94,7 +95,7 @@ $(function() {
       this.model.bind('change', this.render, this);
     },
     render: function() {
-      this.$el.text(this.model.get('name') + ': ' + this.model.get('score'));
+      this.$el.text(this.model.id + ': ' + this.model.get('score'));
       return this;
     }
   });
@@ -104,9 +105,17 @@ $(function() {
     comparator: function(player) {
       return (- player.get('score'));
     },
-    getByName: function(name) {
-      return this.find(function(player) { return (player.get('name') == name); });
-      //TODO fetch from server if missing
+    onName: function(name, callback) {
+      var player = this.get(name);
+      if (player) {
+        callback(player);
+      } else {
+        player = new Player({ id: name });
+        player.fetch({ success: _.bind(function(model) {
+          this.add(model);
+          callback(model);
+        }, this) });
+      }
     }
   });
   
@@ -126,7 +135,7 @@ $(function() {
     }
   });
   
-  // cells, players
+  // cells, players, playing
   var App = Backbone.Model.extend({
     defaults: {
       playing: false
@@ -144,7 +153,10 @@ $(function() {
     listen: function(socket) {
       this.socket = socket;
       this.socket.on('playerchosenumber', _.bind(function(data) {
-        this.get('cells').get(data.value).reserve(this.get('players').getByName(data.player));
+        //TODO mesure ping
+        this.get('players').onName(data.player, _.bind(function(player) {
+          this.get('cells').get(data.value).reserve(player);
+        }, this));
       }, this));
       this.socket.on('newplayer', _.bind(function(player) {
         this.get('players').add(player);
@@ -193,9 +205,23 @@ $(function() {
     }
   });
   
+  // The browser keeps the disabled state when refreshing
+  $('#enterbutton').prop('disabled', false);
+  
+  if (window.localStorage) {
+    var savedname = window.localStorage.getItem('rumble-username');
+    if (savedname) {
+      $('#username').val(savedname);
+    }
+  }
+  
   var socket = io.connect();
   $('#enterbutton').click(function() {
-    socket.emit('chooseusername', { name: $('#username').val() });
+    var name = $('#username').val();
+    socket.emit('chooseusername', { name: name });
+    if (window.localStorage) {
+      window.localStorage.setItem('rumble-username', name);
+    }
   });
   socket.on('wrongusername', function(data) {
     alert(data.reason);

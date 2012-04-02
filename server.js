@@ -20,6 +20,24 @@ var config = {
 }
 
 /**
+ * ---PLAYERMANAGEMENT
+ */
+
+var serverState = {
+  players: {},
+  grid: new Array(config.grid.size),
+  state: 'init'
+}
+
+var playersForUI = function() {
+  var players = new Array();
+  for (var name in serverState.players) {
+    players.push(serverState.players[name]);
+  }
+  return players;
+}
+
+/**
  * ---EXPRESS
  */
 
@@ -32,33 +50,19 @@ app.get('/', function(req, res) {
     config: config
   });
 });
+
+app.get('/user/:name', function(req, res, next){
+  var player = serverState.players[req.params.name];
+  if (player) {
+    res.send(JSON.stringify(player));
+  } else {
+    next('User does not exists');
+  }
+});
+
 app.get('/rumble.js', function(req, res) {
   res.sendfile(__dirname + '/rumble.js');
 });
-
-/**
- * ---PLAYERMANAGEMENT
- */
-
-var serverState = {
-  players: {},
-  grid: new Array(config.grid.size),
-  state: 'init'
-}
-
-var playerForUI = function(player) {
-  return {
-    name: player.username,
-    score: player.score
-  };
-}
-var playersForUI = function() {
-  var players = new Array();
-  for (var name in serverState.players) {
-    players.push(playerForUI(serverState.players[name]));
-  }
-  return players;
-}
 
 /**
  * ---WEBSOCKETS
@@ -90,7 +94,7 @@ io.sockets.on('connection', function(socket) {
   socket.state = 'init';
   bindEvent(socket, 'disconnect', '*', function(data) {
     if (this.player) {
-      delete serverState.players[this.player.username];
+      delete serverState.players[this.player.name];
     }
   });
   bindEvent(socket, 'chooseusername', 'init', function(data) {
@@ -100,7 +104,7 @@ io.sockets.on('connection', function(socket) {
       this.emit('wrongusername', { reason: 'Username already in use' });
     } else {
       serverState.players[data.name] = {
-        username: data.name,
+        id: data.name,
         score: 0
       };
       this.player = serverState.players[data.name];
@@ -108,7 +112,7 @@ io.sockets.on('connection', function(socket) {
         players: playersForUI(),
         gridsize: config.grid.size
       });
-      socket.broadcast.emit('newplayer', playerForUI(this.player));
+      this.broadcast.emit('newplayer', this.player);
       return 'ingame';
     }
   });
@@ -119,8 +123,8 @@ io.sockets.on('connection', function(socket) {
       } else if (serverState.grid[data.chosen]) {
         //TODO already chosen
       } else {
-        serverState.grid[data.chosen] = socket.player.username;
-        io.sockets.emit('playerchosenumber', { player: socket.player.username, value: data.chosen });
+        serverState.grid[data.chosen] = socket.player.id;
+        io.sockets.emit('playerchosenumber', { player: socket.player.id, value: data.chosen });
       }
     } else {
       //TODO too late
