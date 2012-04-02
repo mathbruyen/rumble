@@ -128,6 +128,9 @@ $(function() {
   
   // cells, players
   var App = Backbone.Model.extend({
+    defaults: {
+      playing: false
+    },
     initialize: function() {
       this.set('cells', new Grid());
     },
@@ -146,6 +149,9 @@ $(function() {
       this.socket.on('newplayer', _.bind(function(player) {
         this.get('players').add(player);
       }, this));
+      this.socket.on('closedbeforeresult', _.bind(function() {
+        this.set('playing', false);
+      }, this));
       this.socket.on('terminateround', _.bind(function(data) {
         var cells = this.get('cells');
         var winner = cells.get(data.winner);
@@ -153,14 +159,24 @@ $(function() {
           winner.get('reservedBy').winRound();
         }
         this.get('cells').clean();
+        this.set('playing', true);
       }, this));
     },
     select: function(value) {
       this.socket.emit('choosenumber', { chosen: value });
+      this.set('playing', false);
     }
   });
   
   var AppView = Backbone.View.extend({
+    initialize: function() {
+      this.model.on('change:playing', this.updateButton, this);
+    },
+    updateButton: function() {
+      if (this.button) {
+        this.button.prop('disabled', !this.model.get('playing'));
+      }
+    },
     render: function() {
       this.$el.empty();
       var input = $('<input />').attr({
@@ -168,9 +184,11 @@ $(function() {
         required: true
       });
       this.$el.append(input);
-      this.$el.append($('<button />').text('Select').on('click', _.bind(function() { this.select(input.val() - 1); }, this.model)));
+      this.button = $('<button />').text('Select').on('click', _.bind(function() { this.select(input.val() - 1); }, this.model));
+      this.$el.append(this.button);
       this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
       this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
+      this.updateButton();
       return this;
     }
   });
