@@ -8,7 +8,7 @@ var io = require('socket.io').listen(app);
 var config = {
   grid: {
     size: 100,
-    timeToChoose: 10000,
+    timeToChoose: 13000,
     timeBeforeResult: 2000
   },
   username: {
@@ -110,7 +110,8 @@ io.sockets.on('connection', function(socket) {
       this.player = serverState.players[data.name];
       this.emit('entergame', {
         players: playersForUI(),
-        gridsize: config.grid.size
+        gridsize: config.grid.size,
+        timeToChoose: config.grid.timeToChoose
       });
       this.broadcast.emit('newplayer', this.player);
       return 'ingame';

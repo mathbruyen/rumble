@@ -172,11 +172,60 @@ $(function() {
         }
         this.get('cells').clean();
         this.set('playing', true);
+        this.get('chronometer').start();
       }, this));
     },
     select: function(value) {
       this.socket.emit('choosenumber', { chosen: value });
       this.set('playing', false);
+    }
+  });
+  
+  var Chronometer = Backbone.Model.extend({
+    start: function() {
+      this.set('end', (new Date((new Date()).getTime() + this.get('duration'))).getTime());
+      window.setTimeout(_.bind(function() { this.trigger('finish'); this.unset('end'); }, this), this.get('duration'));
+      this.trigger('start');
+    },
+    remaining: function() {
+      if (this.has('end')) {
+        return (this.get('end') - new Date().getTime());
+      } else {
+        return this.get('duration');
+      }
+    }
+  });
+  
+  var ChronometerView = Backbone.View.extend({
+    initialize: function() {
+      this.model.on('start', this.startRendering, this);
+      this.model.on('finish', this.stopRendering, this);
+    },
+    render: function() {
+      this.$el.text(this.model.remaining());
+      return this;
+    },
+    startRendering: function() {
+      var callback = _.bind(this.render, this);
+      var raf = null;//window.requestAnimationFrame || window.mozRequestAnimationFrame;
+      if (raf) {
+        //TODO repeat that
+        this.rafId = raf(callback);
+      } else {
+        // Fallback at 30fps
+        this.rafId = window.setInterval(callback, 1000 / 30);
+      }
+    },
+    stopRendering: function() {
+      if (this.rafId) {
+        var caf = null;//window.cancelAnimationFrame || window.mozCancelAnimationFrame;
+        if (caf) {
+          caf(this.rafId);
+        } else {
+          window.clearInterval(this.rafId);
+        }
+        this.rafId = null;
+      }
     }
   });
   
@@ -200,6 +249,7 @@ $(function() {
       this.$el.append(this.button);
       this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
       this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
+      this.$el.append(new ChronometerView({ model: this.model.get('chronometer') }).render().el);
       this.updateButton();
       return this;
     }
@@ -228,7 +278,8 @@ $(function() {
   });
   socket.on('entergame', function(data) {
     var a = new App({
-      players: new PlayerList(data.players)
+      players: new PlayerList(data.players),
+      chronometer: new Chronometer({ duration: data.timeToChoose })
     });
     a.setSize(data.gridsize);
     a.listen(socket);
