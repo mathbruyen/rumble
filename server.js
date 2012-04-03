@@ -63,6 +63,9 @@ app.get('/user/:name', function(req, res, next){
 app.get('/rumble.js', function(req, res) {
   res.sendfile(__dirname + '/rumble.js');
 });
+app.get('/rumble.css', function(req, res) {
+  res.sendfile(__dirname + '/rumble.css');
+});
 
 /**
  * ---WEBSOCKETS
@@ -183,3 +186,4 @@ enterChooseNumber();
 // adapt grid size to number of players
 // add readme
 // players with avatars
+// about page on the login

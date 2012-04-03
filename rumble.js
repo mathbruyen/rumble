@@ -60,6 +60,7 @@ $(function() {
   
   var GridView = Backbone.View.extend({
     tagName: 'table',
+    id: 'cells',
     initialize: function() {
       this.model.bind('add', this.render, this);
       this.model.bind('remove', this.render, this);
@@ -121,6 +122,7 @@ $(function() {
   
   var PlayerListView = Backbone.View.extend({
     tagName: 'ul',
+    id: 'players',
     initialize: function() {
       this.model.bind('add', this.render, this);
       this.model.bind('remove', this.render, this);
@@ -200,6 +202,7 @@ $(function() {
   });
   
   var ChronometerView = Backbone.View.extend({
+    id: 'chronometer',
     initialize: function() {
       this.model.on('start', this.startRendering, this);
       this.model.on('finish', this.stopRendering, this);
@@ -251,13 +254,15 @@ $(function() {
     },
     render: function() {
       this.$el.empty();
+      var choosevalue = $('<div />').attr('id', 'choosevalue');
+      this.$el.append(choosevalue);
       var input = $('<input />').attr({
         placeholder: 'Enter your choice...',
         required: true
       });
-      this.$el.append(input);
+      choosevalue.append(input);
       this.button = $('<button />').text('Select').on('click', _.bind(function() { this.select(input.val() - 1); }, this.model));
-      this.$el.append(this.button);
+      choosevalue.append(this.button);
       this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
       this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
       this.$el.append(new ChronometerView({ model: this.model.get('chronometer') }).render().el);
