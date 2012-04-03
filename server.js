@@ -84,7 +84,7 @@ var bindEvent = function(socket, event, state, callback) {
       // TODO Pass setState as an additional argument so that the state could
       // be changed both synchronously and asynchronously but then concurrent
       // actions on the workflow could be tricky or need something like
-      // Connect's next method
+      // Connect's next method that locks during the mean time
       setState(callback.call(socket, data));
     }
   });
@@ -94,7 +94,7 @@ io.sockets.on('connection', function(socket) {
   socket.state = 'init';
   bindEvent(socket, 'disconnect', '*', function(data) {
     if (this.player) {
-      delete serverState.players[this.player.name];
+      delete serverState.players[this.player.id];
     }
   });
   bindEvent(socket, 'chooseusername', 'init', function(data) {
@@ -176,18 +176,10 @@ enterChooseNumber();
 // * send a request that arrives too late at the server
 // * all cells filled before you
 // * filled the last cell
-
-// hight scores (+ average distance)
-// heatmap
-// when switching to a new grid, 3D cube effect
-
+// * no longer 0
 // each round should be identified by a unique ID to prevent conflicts/lag
-
 // use a datalist to suggest values to enter in the input
 // add spinners
 // adapt grid size to number of players
-// list players and their score
-// http://server/#username to prefil username and enter the game directly (+link to change it)
-
 // add readme
-// compress messages by giving an id to players and only sending it
+// players with avatars
