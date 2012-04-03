@@ -184,8 +184,11 @@ $(function() {
   var Chronometer = Backbone.Model.extend({
     start: function() {
       this.set('end', (new Date((new Date()).getTime() + this.get('duration'))).getTime());
-      window.setTimeout(_.bind(function() { this.trigger('finish'); this.unset('end'); }, this), this.get('duration'));
+      window.setTimeout(_.bind(function() { this.unset('end'); this.trigger('finish'); }, this), this.get('duration'));
       this.trigger('start');
+    },
+    running: function() {
+      return this.has('end');
     },
     remaining: function() {
       if (this.has('end')) {
@@ -202,15 +205,22 @@ $(function() {
       this.model.on('finish', this.stopRendering, this);
     },
     render: function() {
-      this.$el.text(this.model.remaining());
+      if (this.model.running()) {
+        this.$el.text('Time left: ' + this.model.remaining());
+      } else {
+        this.$el.text('Waiting...');
+      }
       return this;
     },
     startRendering: function() {
       var callback = _.bind(this.render, this);
-      var raf = null;//window.requestAnimationFrame || window.mozRequestAnimationFrame;
+      var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame;
       if (raf) {
-        //TODO repeat that
-        this.rafId = raf(callback);
+        var call = _.bind(function() {
+          callback();
+          this.rafId = raf(call);
+        }, this);
+        call();
       } else {
         // Fallback at 30fps
         this.rafId = window.setInterval(callback, 1000 / 30);
@@ -218,7 +228,7 @@ $(function() {
     },
     stopRendering: function() {
       if (this.rafId) {
-        var caf = null;//window.cancelAnimationFrame || window.mozCancelAnimationFrame;
+        var caf = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
         if (caf) {
           caf(this.rafId);
         } else {
@@ -226,6 +236,7 @@ $(function() {
         }
         this.rafId = null;
       }
+      this.render();
     }
   });
   
