@@ -82,6 +82,47 @@ $(function() {
     }
   });
   
+  // name, comment, image
+  var Badge = Backbone.Model.extend({
+  });
+  
+  var BadgeList = Backbone.Collection.extend({
+    model: Badge
+  });
+  
+  var BadgeView = Backbone.View.extend({
+    tagName: 'li',
+    initialize: function() {
+      this.model.bind('change', this.render, this);
+    },
+    render: function() {
+      this.$el.empty();
+      var image = $('<img />').attr({
+        'src': 'data:image/png;base64,' + this.model.get('image'),
+        'alt': this.model.get('name') + ': ' + this.model.get('comment')
+      });
+      this.$el.append(image);
+      return this;
+    }
+  });
+  
+  var BadgeListView = Backbone.View.extend({
+    tagName: 'ul',
+    id: 'badges',
+    initialize: function() {
+      this.model.bind('add', this.render, this);
+      this.model.bind('remove', this.render, this);
+      this.model.bind('reset', this.render, this);
+    },
+    render: function() {
+      this.$el.empty();
+      this.model.each(function(badge) {
+        this.$el.append(new BadgeView({ model: badge }).render().el);
+      }, this);
+      return this;
+    }
+  });
+  
   // id(name), score
   var Player = Backbone.Model.extend({
     urlRoot: '/players',
@@ -144,6 +185,7 @@ $(function() {
     },
     initialize: function() {
       this.set('cells', new Grid());
+      this.set('badges', new BadgeList());
     },
     setSize: function(size) {
       var c = this.get('cells');
@@ -162,6 +204,9 @@ $(function() {
       }, this));
       this.socket.on('newplayer', _.bind(function(player) {
         this.get('players').add(player);
+      }, this));
+      this.socket.on('newbadge', _.bind(function(badge) {
+        this.get('badges').add(badge);
       }, this));
       this.socket.on('closedbeforeresult', _.bind(function() {
         this.set('playing', false);
@@ -266,6 +311,7 @@ $(function() {
       this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
       this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
       this.$el.append(new ChronometerView({ model: this.model.get('chronometer') }).render().el);
+      this.$el.append(new BadgeListView({ model: this.model.get('badges') }).render().el);
       this.updateButton();
       return this;
     }

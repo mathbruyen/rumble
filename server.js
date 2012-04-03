@@ -1,5 +1,6 @@
 var app = require('express').createServer();
 var io = require('socket.io').listen(app);
+var plugins = require('./plugins');
 
 /**
  * ---CONFIGURATION
@@ -26,7 +27,8 @@ var config = {
 var serverState = {
   players: {},
   grid: new Array(config.grid.size),
-  state: 'init'
+  state: 'init',
+  plugins: []
 }
 
 var playersForUI = function() {
@@ -35,7 +37,19 @@ var playersForUI = function() {
     players.push(serverState.players[name]);
   }
   return players;
-}
+};
+
+/**
+ * ---PLUGINS
+ */
+
+(function() {
+  var plugin = new plugins.Plugin('First blood', 'Try for the first time', 'firsttry');
+  plugin.on('choose', function(data, plugins) {
+    plugins.emit('apply', plugin);
+  });
+  serverState.plugins.push(plugin);
+})();
 
 /**
  * ---EXPRESS
@@ -97,7 +111,7 @@ io.sockets.on('connection', function(socket) {
   socket.state = 'init';
   bindEvent(socket, 'disconnect', '*', function(data) {
     if (this.player) {
-      delete serverState.players[this.player.id];
+      delete serverState.players[this.plaplayersForUIyer.id];
     }
   });
   bindEvent(socket, 'chooseusername', 'init', function(data) {
@@ -111,6 +125,12 @@ io.sockets.on('connection', function(socket) {
         score: 0
       };
       this.player = serverState.players[data.name];
+      
+      this.plugins = new plugins.Plugins(serverState.plugins);
+      this.plugins.on('apply', function(plugin) {
+        socket.emit('newbadge', plugin.toJson());
+      });
+      
       this.emit('entergame', {
         players: playersForUI(),
         gridsize: config.grid.size,
@@ -129,6 +149,7 @@ io.sockets.on('connection', function(socket) {
       } else {
         serverState.grid[data.chosen] = socket.player.id;
         io.sockets.emit('playerchosenumber', { player: socket.player.id, value: data.chosen });
+        this.plugins.apply('choose', { value: data.chosen });
       }
     } else {
       //TODO too late
@@ -187,3 +208,4 @@ enterChooseNumber();
 // add readme
 // players with avatars
 // about page on the login
+// show badges of other players
