@@ -76,14 +76,14 @@ table {
 /* Playground */
 #players {
   position: absolute;
-  top: 3em;
+  top: 5em;
   left: 70%;
   right: 3em;
   padding: 5px;
 }
 #cells {
   position: absolute;
-  top: 3em;
+  top: 5em;
   left: 0;
   width: 70%;
 }
@@ -112,14 +112,14 @@ table {
 }
 #chronometer {
   position: absolute;
-  top: 1em;
+  top: 3em;
   left: 0;
   width: 20%;
   text-align: center;
 }
 #choosevalue {
   position: absolute;
-  top: 1em;
+  top: 3em;
   left: 20%;
   width: 80%;
 }
@@ -135,10 +135,17 @@ table {
 }
 #badges {
   position: absolute;
-  top: 3em;
+  top: 5em;
   right: 0;
   width: 3em;
 }
 #badges img {
   width: 3em;
+}
+#message {
+  position: absolute;
+  top: 1em;
+  left: 0;
+  text-align: center;
+  width: 100%;
 }

@@ -169,6 +169,7 @@ $(function() {
       this.model.bind('add', this.render, this);
       this.model.bind('remove', this.render, this);
       this.model.bind('reset', this.render, this);
+      // TODO handle ordering change
     },
     render: function() {
       this.$el.empty();
@@ -179,7 +180,7 @@ $(function() {
     }
   });
   
-  // cells, players, playing
+  // cells, players, playing, message
   var App = Backbone.Model.extend({
     defaults: {
       playing: false
@@ -216,7 +217,11 @@ $(function() {
         var cells = this.get('cells');
         var winner = cells.get(data.winner);
         if (winner.has('reservedBy')) {
-          winner.get('reservedBy').winRound();
+          var player = winner.get('reservedBy');
+          player.winRound();
+          this.set('message', player.id + ' wins with number ' + (data.winner + 1));
+        } else {
+          this.set('message', 'Nobody had chosen number ' + (data.winner + 1));
         }
         this.get('cells').clean();
         this.set('playing', true);
@@ -255,7 +260,10 @@ $(function() {
     },
     render: function() {
       if (this.model.running()) {
-        this.$el.text('Time left: ' + this.model.remaining());
+        var remaining = this.model.remaining();
+        var seconds = Math.floor(remaining / 1000);
+        var milliseconds = remaining - (seconds * 1000);
+        this.$el.text('Time left: ' + seconds + 's ' + milliseconds + 'ms');
       } else {
         this.$el.text('Waiting...');
       }
@@ -292,10 +300,16 @@ $(function() {
   var AppView = Backbone.View.extend({
     initialize: function() {
       this.model.on('change:playing', this.updateButton, this);
+      this.model.on('change:message', this.updateMessage, this);
     },
     updateButton: function() {
       if (this.button) {
         this.button.prop('disabled', !this.model.get('playing'));
+      }
+    },
+    updateMessage: function() {
+      if (this.message) {
+        this.message.text(this.model.get('message'));
       }
     },
     render: function() {
@@ -309,6 +323,8 @@ $(function() {
       choosevalue.append(input);
       this.button = $('<button />').text('Select').on('click', _.bind(function() { this.select(input.val() - 1); }, this.model));
       choosevalue.append(this.button);
+      this.message = $('<div />').attr('id', 'message');
+      this.$el.append(this.message);
       this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
       this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
       this.$el.append(new ChronometerView({ model: this.model.get('chronometer') }).render().el);
