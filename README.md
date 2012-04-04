@@ -30,3 +30,5 @@ Uses:
 * adapt grid size to number of players
 * players with avatars
 * show badges of other players
+* bind enter to the buttons
+
