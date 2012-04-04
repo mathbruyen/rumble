@@ -44,9 +44,82 @@ var playersForUI = function() {
  */
 
 (function() {
-  var plugin = new plugins.Plugin('First blood', 'Try for the first time', 'firsttry');
+  var plugin = new plugins.Plugin('First blood', 'Try for the first time', 'blood');
   plugin.on('choose', function(data, plugins) {
     plugins.emit('apply', plugin);
+  });
+  serverState.plugins.push(plugin);
+})();
+
+(function() {
+  var plugin = new plugins.Plugin('Too late', 'Choice has been made too late', 'clock');
+  plugin.on('toolate', function(data, plugins) {
+    plugins.emit('apply', plugin);
+  });
+  serverState.plugins.push(plugin);
+})();
+
+(function() {
+  var plugin = new plugins.Plugin('Already chosen', 'Choice is already reserved', 'turtle');
+  plugin.on('alreadychosen', function(data, plugins) {
+    plugins.emit('apply', plugin);
+  });
+  serverState.plugins.push(plugin);
+})();
+
+(function() {
+  var plugin = new plugins.Plugin('Invalid choice', 'Choice is incorrect', 'cheat');
+  plugin.on('invalidchoice', function(data, plugins) {
+    plugins.emit('apply', plugin);
+  });
+  serverState.plugins.push(plugin);
+})();
+
+(function() {
+  var plugin = new plugins.Plugin('Repeat', '3 times the same choice in a row', 'keyboard');
+  plugin.on('choose', function(data, plugins) {
+    if (!plugins.repeatLastChoice) {
+      plugin.repeatNumber = 0;
+    }
+    if (plugins.repeatLastChoice === data.value) {
+      plugin.repeatNumber++;
+      if (plugin.repeatNumber === 3) {
+        plugins.emit('apply', plugin);
+      }
+    } else {
+      plugins.repeatLastChoice = data.value;
+      plugins.repeatNumber = 1;
+    }
+  });
+  serverState.plugins.push(plugin);
+})();
+
+(function() {
+  var plugin = new plugins.Plugin('Spectator', '3 times without playing in a row', 'spectator');
+  plugin.on('choose', function(data, plugins) {
+    plugins.repeatNumber = 0;
+  });
+  plugin.on('terminateround', function(data, plugins) {
+    if (!plugins.repeatNumber) {
+      plugins.repeatNumber = 0;
+    }
+    plugins.repeatNumber++;
+    if (plugins.repeatNumber == 3) {
+      plugins.emit('apply', plugin);
+    }
+  });
+  serverState.plugins.push(plugin);
+})();
+
+(function() {
+  var plugin = new plugins.Plugin('Winner', 'Win for the first time', 'winner');
+  plugin.on('choose', function(data, plugins) {
+    plugins.winnerChosen = data.value;
+  });
+  plugin.on('terminateround', function(data, plugins) {
+    if (plugins.winnerChosen === data.winner) {
+      plugins.emit('apply', plugin);
+    }
   });
   serverState.plugins.push(plugin);
 })();
@@ -111,9 +184,9 @@ io.sockets.on('connection', function(socket) {
   socket.state = 'init';
   bindEvent(socket, 'disconnect', '*', function(data) {
     if (this.player) {
+      io.sockets.emit('playerleave', { player: this.player.id });
       delete serverState.players[this.player.id];
     }
-    io.sockets.emit('playerleave', { player: this.player.id });
   });
   bindEvent(socket, 'chooseusername', 'init', function(data) {
     if ((!data.name) || (data.name == 'N/A') || (data.name.length > 20)) {
@@ -144,19 +217,27 @@ io.sockets.on('connection', function(socket) {
   bindEvent(socket, 'choosenumber', 'ingame', function(data) {
     if (serverState.state == 'choosenumber') {
       if ((data.chosen < 0) || (data.chosen >= config.grid.size)) {
-        //TODO wrong number
+        this.plugins.apply('invalidchoice', { value: data.chosen });
       } else if (serverState.grid[data.chosen]) {
-        //TODO already chosen
+        this.plugins.apply('alreadychosen', { value: data.chosen, by: serverState.grid[data.chosen] });
       } else {
         serverState.grid[data.chosen] = socket.player.id;
         io.sockets.emit('playerchosenumber', { player: socket.player.id, value: data.chosen });
         this.plugins.apply('choose', { value: data.chosen });
       }
     } else {
-      //TODO too late
+        this.plugins.apply('toolate', { value: data.chosen });
     }
   });
 });
+
+var toAllPlugins = function(event, data) {
+  io.sockets.clients().forEach(function(socket) {
+    if (socket.plugins) {
+      socket.plugins.apply(event, data);
+    }
+  });
+}
 
 /**
  * ---SERVERSIDE
@@ -186,6 +267,7 @@ var announceResult = function() {
     serverState.grid[i] = null;
   }
   io.sockets.emit('terminateround', { winner: result });
+  toAllPlugins('terminateround', { winner: result });
 }
 
 enterChooseNumber();
