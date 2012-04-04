@@ -101,6 +101,7 @@ table {
   border-bottom-right-radius: 1em;
 }
 #cells td {
+  cursor: pointer;
   text-align: center;
   height: 3em;
   vertical-align: middle;
