@@ -55,7 +55,7 @@ var playersForUI = function() {
  * ---EXPRESS
  */
 
-app.listen(config.express.port);
+app.listen(process.env.PORT || config.express.port);
 app.set('view engine', 'jade');
 app.set('view options', { layout: false });
 
