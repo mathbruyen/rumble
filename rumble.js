@@ -99,7 +99,8 @@ $(function() {
       this.$el.empty();
       var image = $('<img />').attr({
         'src': 'data:image/png;base64,' + this.model.get('image'),
-        'alt': this.model.get('name') + ': ' + this.model.get('comment')
+        'alt': this.model.get('name'),
+        'title': this.model.get('name') + ': ' + this.model.get('comment')
       });
       this.$el.append(image);
       return this;
