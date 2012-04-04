@@ -271,24 +271,3 @@ var announceResult = function() {
 }
 
 enterChooseNumber();
-
-/**
- * ---TODOS
- */
-// badges = plugins (listen to events) => sound, visual effect, cursor, ...
-// * select a cell that has just be chosen by another
-// * do not play for n rounds
-// * win n rounds in arow
-// * play n times the same number
-// * send a request that arrives too late at the server
-// * all cells filled before you
-// * filled the last cell
-// * no longer 0
-// each round should be identified by a unique ID to prevent conflicts/lag
-// use a datalist to suggest values to enter in the input
-// add spinners
-// adapt grid size to number of players
-// add readme
-// players with avatars
-// about page on the login
-// show badges of other players
