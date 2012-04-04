@@ -111,7 +111,7 @@ io.sockets.on('connection', function(socket) {
   socket.state = 'init';
   bindEvent(socket, 'disconnect', '*', function(data) {
     if (this.player) {
-      delete serverState.players[this.plaplayersForUIyer.id];
+      delete serverState.players[this.player.id];
     }
   });
   bindEvent(socket, 'chooseusername', 'init', function(data) {
