@@ -13,3 +13,31 @@ html(lang="en")
     div#game
       input#username(placeholder='Enter a username...', maxlength='#{config.username.maxlength}', required)
       button#enterbutton Enter
+      ul#readme
+        li Built by Mathieu Bruyen
+          ul
+            li
+              a(href='https://twitter.com/mathbruyen/') Twitter
+            li
+              a(href='https://github.com/mathbruyen') Github
+        li Tooling
+          ul
+            li
+              a(href='https://github.com/mathbruyen/rumble') Source code here
+            li
+              a(href='http://nodejs.org/') Node.js
+            li
+              a(href='http://expressjs.com/') Express
+            li
+              a(href='http://backbonejs.org/') Backbone
+            li
+              a(href='http://documentcloud.github.com/underscore/') Underscore
+            li
+              a(href='http://socket.io/') Socket.io
+            li
+              a(href='https://commons.wikimedia.org') Wikimedia Commons
+        li How to
+          ul
+            li Choose a username and enter the game
+            li At each round, select a number either by clicking on the cell or by entering the value in the input
+            li Earn badges while playing (or not)

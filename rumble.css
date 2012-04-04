@@ -72,6 +72,32 @@ table {
   right: 0;
   width: 27%;
 }
+#readme {
+  position: absolute;
+  top: 12em;
+}
+#readme {
+  list-style-type: square;
+  padding: 1em;
+}
+#readme ul {
+  list-style-type: circle;
+  padding: 1em;
+}
+#readme li {
+  padding: 2px;
+}
+#readme a, #readme a:link, #readme a:visited, #readme a:hover, #readme a:active {
+  color: #191;
+  font-weight: bold;
+  text-decoration: none;
+}
+#readme a:hover {
+  color: #919;
+  background-color: #191;
+  font-weight: bold;
+  text-decoration: none;
+}
 
 /* Playground */
 #players {
