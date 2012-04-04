@@ -29,7 +29,7 @@ $(function() {
       this.unset('reservedBy');
     },
     reserve: function(by) {
-      this.set('heat', Math.max(config.heat.max, this.get('heat') + 1));
+      this.set('heat', Math.min(config.heat.max, this.get('heat') + 1));
       this.set('reservedBy', by);
     }
   });
@@ -40,6 +40,9 @@ $(function() {
       this.model.bind('change', this.render, this);
     },
     render: function() {
+      this.$el.on('click', _.bind(function() {
+        window.rumbleApp.select(this.model.id);
+      }, this));
       if (this.model.has('reservedBy')) {
         this.$el.text(this.model.get('reservedBy').id);
       } else {
@@ -229,8 +232,11 @@ $(function() {
       }, this));
     },
     select: function(value) {
-      this.socket.emit('choosenumber', { chosen: value });
-      this.set('playing', false);
+      if (this.get('playing') === true) {
+        //TODO validate
+        this.socket.emit('choosenumber', { chosen: value });
+        this.set('playing', false);
+      }
     }
   });
   
@@ -356,12 +362,12 @@ $(function() {
     alert(data.reason);
   });
   socket.on('entergame', function(data) {
-    var a = new App({
+    window.rumbleApp = new App({
       players: new PlayerList(data.players),
       chronometer: new Chronometer({ duration: data.timeToChoose })
     });
-    a.setSize(data.gridsize);
-    a.listen(socket);
-    new AppView({ model: a, el: $('#game') }).render();
+    window.rumbleApp.setSize(data.gridsize);
+    window.rumbleApp.listen(socket);
+    new AppView({ model: window.rumbleApp, el: $('#game') }).render();
   });
 })
