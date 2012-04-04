@@ -210,6 +210,9 @@ $(function() {
       this.socket.on('newplayer', _.bind(function(player) {
         this.get('players').add(player);
       }, this));
+      this.socket.on('playerleave', _.bind(function(data) {
+        this.get('players').remove(this.get('players').get(data.player));
+      }, this));
       this.socket.on('newbadge', _.bind(function(badge) {
         this.get('badges').add(badge);
       }, this));

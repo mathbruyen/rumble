@@ -113,6 +113,7 @@ io.sockets.on('connection', function(socket) {
     if (this.player) {
       delete serverState.players[this.player.id];
     }
+    io.sockets.emit('playerleave', { player: this.player.id });
   });
   bindEvent(socket, 'chooseusername', 'init', function(data) {
     if ((!data.name) || (data.name == 'N/A') || (data.name.length > 20)) {
