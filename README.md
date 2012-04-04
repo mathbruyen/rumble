@@ -4,6 +4,7 @@ This is a simple game that I realized for [that competition](http://www.web-tamb
 Not very advanced graphically, I tried more to add a dynamic feature with badges (though there are not enought of them).
 
 Uses:
+
 * [Node.js](href='http://nodejs.org/')
 * [Express](href='http://expressjs.com/')
 * [Backbone](href='http://backbonejs.org/')
