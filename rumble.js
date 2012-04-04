@@ -62,15 +62,15 @@ $(function() {
     tagName: 'table',
     id: 'cells',
     initialize: function() {
-      this.model.bind('add', this.render, this);
-      this.model.bind('remove', this.render, this);
-      this.model.bind('reset', this.render, this);
+      this.collection.bind('add', this.render, this);
+      this.collection.bind('remove', this.render, this);
+      this.collection.bind('reset', this.render, this);
     },
     render: function() {
       this.$el.empty();
-      var c = Math.ceil(Math.sqrt(this.model.size()));
+      var c = Math.ceil(Math.sqrt(this.collection.size()));
       if (c > 0) {
-        _.split(this.model, c).each(function(row) {
+        _.split(this.collection, c).each(function(row) {
           var r = $('<tr>');
           row.each(function(cell) {
             r.append(new CellView({ model: cell }).render().el);
@@ -111,13 +111,13 @@ $(function() {
     tagName: 'ul',
     id: 'badges',
     initialize: function() {
-      this.model.bind('add', this.render, this);
-      this.model.bind('remove', this.render, this);
-      this.model.bind('reset', this.render, this);
+      this.collection.bind('add', this.render, this);
+      this.collection.bind('remove', this.render, this);
+      this.collection.bind('reset', this.render, this);
     },
     render: function() {
       this.$el.empty();
-      this.model.each(function(badge) {
+      this.collection.each(function(badge) {
         this.$el.append(new BadgeView({ model: badge }).render().el);
       }, this);
       return this;
@@ -166,14 +166,14 @@ $(function() {
     tagName: 'ul',
     id: 'players',
     initialize: function() {
-      this.model.bind('add', this.render, this);
-      this.model.bind('remove', this.render, this);
-      this.model.bind('reset', this.render, this);
+      this.collection.bind('add', this.render, this);
+      this.collection.bind('remove', this.render, this);
+      this.collection.bind('reset', this.render, this);
       // TODO handle ordering change
     },
     render: function() {
       this.$el.empty();
-      this.model.each(function(player) {
+      this.collection.each(function(player) {
         this.$el.append(new PlayerMiniView({ model: player }).render().el);
       }, this);
       return this;
@@ -325,10 +325,10 @@ $(function() {
       choosevalue.append(this.button);
       this.message = $('<div />').attr('id', 'message');
       this.$el.append(this.message);
-      this.$el.append(new GridView({ model: this.model.get('cells') }).render().el);
-      this.$el.append(new PlayerListView({ model: this.model.get('players') }).render().el);
+      this.$el.append(new GridView({ collection: this.model.get('cells') }).render().el);
+      this.$el.append(new PlayerListView({ collection: this.model.get('players') }).render().el);
       this.$el.append(new ChronometerView({ model: this.model.get('chronometer') }).render().el);
-      this.$el.append(new BadgeListView({ model: this.model.get('badges') }).render().el);
+      this.$el.append(new BadgeListView({ collection: this.model.get('badges') }).render().el);
       this.updateButton();
       return this;
     }
