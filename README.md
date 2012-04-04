@@ -22,9 +22,9 @@ Uses:
 ### Ideas/TODOs
 
 * new badges
-** win n rounds in arow
-** all cells filled by other players before you could play
-** filled the last available cell
+    * win n rounds in arow
+    * all cells filled by other players before you could play
+    * filled the last available cell
 * use a datalist to suggest values to enter in the input
 * add spinners
 * adapt grid size to number of players
