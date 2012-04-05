@@ -158,6 +158,10 @@ app.get('/rumble.css', function(req, res) {
  * ---WEBSOCKETS
  */
 
+io.configure(function () { 
+  io.set("transports", ["xhr-polling"]); 
+  io.set("polling duration", 10); 
+});
 io.enable('browser client minification');
 io.enable('browser client etag');
 io.enable('browser client gzip');
