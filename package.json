@@ -3,8 +3,8 @@
   "preferGlobal": "true",
   "version": "0.0.1",
   "scripts": {
-    "start": "env HOME=$PWD node_modules/forever/bin/forever start server.js",
-    "stop": "env HOME=$PWD node_modules/forever/bin/forever stop server.js"
+    "start": "env PATH=./node_modules/.bin:$PATH HOME=$PWD forever start server.js",
+    "stop": "env PATH=./node_modules/.bin:$PATH HOME=$PWD forever stop server.js"
   },
   "dependencies" : {
     "express": "*",
