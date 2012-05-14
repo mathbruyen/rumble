@@ -3,13 +3,11 @@
   "preferGlobal": "true",
   "version": "0.0.1",
   "scripts": {
-    "start": "env PATH=./node_modules/.bin:$PATH HOME=$PWD forever start server.js",
-    "stop": "env PATH=./node_modules/.bin:$PATH HOME=$PWD forever stop server.js"
+    "start": "node server.js"
   },
   "dependencies" : {
     "express": "*",
     "socket.io": "*",
-    "jade": "*",
-    "forever": "*"
+    "jade": "*"
   }
 }
