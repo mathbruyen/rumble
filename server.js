@@ -188,6 +188,7 @@ io.sockets.on('connection', function(socket) {
   socket.state = 'init';
   bindEvent(socket, 'disconnect', '*', function(data) {
     if (this.player) {
+      console.log("Player " + this.player.id + " leaves");
       io.sockets.emit('playerleave', { player: this.player.id });
       delete serverState.players[this.player.id];
     }
@@ -206,6 +207,7 @@ io.sockets.on('connection', function(socket) {
       
       this.plugins = new plugins.Plugins(serverState.plugins);
       this.plugins.on('apply', function(plugin) {
+        console.log("Player " + serverState.players[data.name].id + " receives badge " + plugin.name);
         socket.emit('newbadge', plugin.toJson());
       });
       
@@ -215,6 +217,7 @@ io.sockets.on('connection', function(socket) {
         timeToChoose: config.grid.timeToChoose
       });
       this.broadcast.emit('newplayer', this.player);
+      console.log("Player " + this.player.id + " enters");
       return 'ingame';
     }
   });
@@ -228,6 +231,7 @@ io.sockets.on('connection', function(socket) {
         serverState.grid[data.chosen] = socket.player.id;
         io.sockets.emit('playerchosenumber', { player: socket.player.id, value: data.chosen });
         this.plugins.apply('choose', { value: data.chosen });
+        console.log("Player " + this.player.id + " chooses " + data.chosen);
       }
     } else {
         this.plugins.apply('toolate', { value: data.chosen });
@@ -253,6 +257,7 @@ var enterChooseNumber = function() {
     enterClosedBeforeResult();
     io.sockets.emit('closedbeforeresult');
   }, config.grid.timeToChoose);
+  console.log("Choices opened");
 }
 var enterClosedBeforeResult = function() {
   serverState.state = 'closedbeforeresult';
@@ -260,6 +265,7 @@ var enterClosedBeforeResult = function() {
     announceResult();
     enterChooseNumber();
   }, config.grid.timeBeforeResult);
+  console.log("Choices closed");
 }
 var announceResult = function() {
   var result = Math.floor(Math.random() * config.grid.size);
@@ -270,8 +276,11 @@ var announceResult = function() {
   for (var i = 0; i < config.grid.size; i++) {
     serverState.grid[i] = null;
   }
+  console.log("Announce result: " + result);
   io.sockets.emit('terminateround', { winner: result });
   toAllPlugins('terminateround', { winner: result });
 }
 
 enterChooseNumber();
+
+console.log("Application started");
